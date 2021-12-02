@@ -1,0 +1,1984 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`with cm 1`] = `
+Array [
+  Object {
+    "apiVersion": "storage.k8s.io/v1",
+    "kind": "StorageClass",
+    "metadata": Object {
+      "name": "test-tt-dev-redis-storageclass-c8dabe26",
+      "namespace": "test",
+    },
+    "parameters": Object {
+      "fsType": "ext4",
+      "iopsPerGB": "3",
+      "type": "gp2",
+    },
+    "provisioner": "kubernetes.io/aws-ebs",
+  },
+  Object {
+    "apiVersion": "v1",
+    "automountServiceAccountToken": true,
+    "kind": "ServiceAccount",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis",
+      "namespace": "test",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "data": Object {
+      "redis-password": "test",
+    },
+    "kind": "Secret",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis",
+      "namespace": "test",
+    },
+    "type": "Opaque",
+  },
+  Object {
+    "apiVersion": "v1",
+    "data": Object {
+      "master.conf": "-
+    dir /data
+    # User-supplied master configuration:
+    rename-command FLUSHDB \\"\\"
+    rename-command FLUSHALL \\"\\"
+    # End of master configuration
+",
+      "redis.conf": "-
+    # User-supplied common configuration:
+    # Enable AOF https://redis.io/topics/persistence#append-only-file
+    appendonly yes
+    # Disable RDB persistence, AOF persistence already enabled.
+    save \\"\\"
+    # End of common configuration
+",
+      "replica.conf": "-
+    dir /data
+    slave-read-only yes
+    # User-supplied replica configuration:
+    rename-command FLUSHDB \\"\\"
+    rename-command FLUSHALL \\"\\"
+    # End of replica configuration
+",
+      "sentinel.conf": "-
+    dir \\"/tmp\\"
+    port 26379
+    sentinel monitor mymaster redis-node-0.redis-headless.default.svc.cluster.local 6379 2
+    sentinel down-after-milliseconds mymaster 60000
+    sentinel failover-timeout mymaster 18000
+    sentinel parallel-syncs mymaster 1
+    # User-supplied sentinel configuration:
+    # End of sentinel configuration
+",
+    },
+    "kind": "ConfigMap",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-configuration",
+      "namespace": "test",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "data": Object {
+      "parse_sentinels.awk": "/ip/ {FOUND_IP=1}
+/port/ {FOUND_PORT=1}
+/runid/ {FOUND_RUNID=1}
+!/ip|port|runid/ {
+  if (FOUND_IP==1) {
+    IP=$1; FOUND_IP=0;
+  }
+  else if (FOUND_PORT==1) {
+    PORT=$1;
+    FOUND_PORT=0;
+  } else if (FOUND_RUNID==1) {
+    printf \\"
+sentinel known-sentinel mymaster %s %s %s\\", IP, PORT, $0; FOUND_RUNID=0;
+  }
+}",
+      "ping_liveliness_local_and_master.sh": "script_dir=\\"$(dirname \\"$0\\")\\"
+exit_status=0
+\\"$script_dir/ping_liveness_local.sh\\" $1 || exit_status=$?
+\\"$script_dir/ping_liveness_master.sh\\" $1 || exit_status=$?
+exit $exit_status",
+      "ping_liveness_master.sh": "    #!/bin/bash
+
+    [[ -f $REDIS_MASTER_PASSWORD_FILE ]] && export REDIS_MASTER_PASSWORD=\\"$(< \\"\${REDIS_MASTER_PASSWORD_FILE}\\")\\"
+    [[ -n \\"$REDIS_MASTER_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_MASTER_PASSWORD\\"
+    response=$(
+      timeout -s 3 $1       redis-cli         -h $REDIS_MASTER_HOST         -p $REDIS_MASTER_PORT_NUMBER         ping
+    )
+    if [ \\"$response\\" != \\"PONG\\" ] && [ \\"$response\\" != \\"LOADING Redis is loading the dataset in memory\\" ]; then
+      echo \\"$response\\"
+      exit 1
+    fi",
+      "ping_livesness_local.sh": "#!/bin/bash
+
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_PORT     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ] && [ \\"$response\\" != \\"LOADING Redis is loading the dataset in memory\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
+      "ping_readiness_local.sh": "#!/bin/bash
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_PORT     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
+      "ping_readiness_local_and_master.sh": "script_dir=\\"$(dirname \\"$0\\")\\"
+exit_status=0
+\\"$script_dir/ping_readiness_local.sh\\" $1 || exit_status=$?
+\\"$script_dir/ping_readiness_master.sh\\" $1 || exit_status=$?
+exit $exit_status",
+      "ping_readiness_master.sh": "#!/bin/bash
+
+[[ -f $REDIS_MASTER_PASSWORD_FILE ]] && export REDIS_MASTER_PASSWORD=\\"$(< \\"\${REDIS_MASTER_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_MASTER_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_MASTER_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h $REDIS_MASTER_HOST     -p $REDIS_MASTER_PORT_NUMBER     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
+      "ping_sentinel.sh": "#!/bin/bash
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_SENTINEL_PORT     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
+    },
+    "kind": "ConfigMap",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-health",
+      "namespace": "test",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "data": Object {
+      "prestop-redis.sh": "#!/bin/bash
+
+. /opt/bitnami/scripts/libvalidations.sh
+. /opt/bitnami/scripts/libos.sh
+
+run_redis_command() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        redis-cli -h 127.0.0.1 -p \\"$REDIS_TLS_PORT\\" --tls --cert \\"$REDIS_TLS_CERT_FILE\\" --key \\"$REDIS_TLS_KEY_FILE\\" --cacert \\"$REDIS_TLS_CA_FILE\\" \\"$@\\"
+    else
+        redis-cli -h 127.0.0.1 -p \${REDIS_PORT} \\"$@\\"
+    fi
+}
+failover_finished() {
+    REDIS_ROLE=$(run_redis_command role | head -1)
+    [[ \\"$REDIS_ROLE\\" != \\"master\\" ]]
+}
+
+# redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+[[ -f \\"$REDIS_PASSWORD_FILE\\" ]] && export REDISCLI_AUTH=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+
+if ! failover_finished; then
+    echo \\"Waiting for sentinel to run failover for up to 20s\\"
+    retry_while \\"failover_finished\\" \\"20\\" 1
+else
+    exit 0
+fi",
+      "prestop-sentinel.sh": "#!/bin/bash
+
+. /opt/bitnami/scripts/libvalidations.sh
+. /opt/bitnami/scripts/libos.sh
+
+HEADLESS_SERVICE=\\"redis-headless.default.svc.cluster.local\\"
+SENTINEL_SERVICE_ENV_NAME=REDIS_SERVICE_PORT_TCP_SENTINEL
+SENTINEL_SERVICE_PORT=\${!SENTINEL_SERVICE_ENV_NAME}
+
+get_full_hostname() {
+    hostname=\\"$1\\"
+    echo \\"\${hostname}.\${HEADLESS_SERVICE}\\"
+}
+run_sentinel_command() {
+    if is_boolean_yes \\"$REDIS_SENTINEL_TLS_ENABLED\\"; then
+        redis-cli -h \\"$REDIS_SERVICE\\" -p \\"$SENTINEL_SERVICE_PORT\\" --tls --cert \\"$REDIS_SENTINEL_TLS_CERT_FILE\\" --key \\"$REDIS_SENTINEL_TLS_KEY_FILE\\" --cacert \\"$REDIS_SENTINEL_TLS_CA_FILE\\" sentinel \\"$@\\"
+    else
+        redis-cli -h \\"$REDIS_SERVICE\\" -p \\"$SENTINEL_SERVICE_PORT\\" sentinel \\"$@\\"
+    fi
+}
+failover_finished() {
+  REDIS_SENTINEL_INFO=($(run_sentinel_command get-master-addr-by-name \\"mymaster\\"))
+  REDIS_MASTER_HOST=\\"\${REDIS_SENTINEL_INFO[0]}\\"
+  [[ \\"$REDIS_MASTER_HOST\\" != \\"$(get_full_hostname $HOSTNAME)\\" ]]
+}
+
+REDIS_SERVICE=\\"redis.default.svc.cluster.local\\"
+
+# redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+[[ -f \\"$REDIS_PASSWORD_FILE\\" ]] && export REDISCLI_AUTH=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+
+if ! failover_finished; then
+    echo \\"I am the master pod and you are stopping me. Starting sentinel failover\\"
+    # if I am the master, issue a command to failover once and then wait for the failover to finish
+    run_sentinel_command failover \\"mymaster\\"
+    if retry_while \\"failover_finished\\" \\"20\\" 1; then
+        echo \\"Master has been successfuly failed over to a different pod.\\"
+        exit 0
+    else
+        echo \\"Master failover failed\\"
+        exit 1
+    fi
+else
+    exit 0
+fi",
+      "start-node.sh": "#!/bin/bash
+
+. /opt/bitnami/scripts/libos.sh
+. /opt/bitnami/scripts/liblog.sh
+. /opt/bitnami/scripts/libvalidations.sh
+
+get_port() {
+    hostname=\\"$1\\"
+    type=\\"$2\\"
+
+    port_var=$(echo \\"\${hostname^^}_SERVICE_PORT_$type\\" | sed \\"s/-/_/g\\")
+    port=\${!port_var}
+    
+    if [ -z \\"$port\\" ]; then
+        case $type in
+            \\"SENTINEL\\")
+                echo 26379
+                ;;
+            \\"REDIS\\")
+                echo 6379
+                ;;
+        esac
+    else
+        echo $port
+    fi
+}
+
+get_full_hostname() {
+    hostname=\\"$1\\"
+    echo \\"\${hostname}.\${HEADLESS_SERVICE}\\"
+}
+
+REDISPORT=$(get_port \\"$HOSTNAME\\" \\"REDIS\\")
+
+myip=$(hostname -i)
+
+# If there are more than one IP, use the first IPv4 address
+if [[ \\"$myip\\" = *\\" \\"* ]]; then
+    myip=$(echo $myip | awk '{if ( match($0,/([0-9]+.)([0-9]+.)([0-9]+.)[0-9]+/) ) { print substr($0,RSTART,RLENGTH); } }')
+fi
+
+HEADLESS_SERVICE=\\"redis-headless.default.svc.cluster.local\\"
+REDIS_SERVICE=\\"redis.default.svc.cluster.local\\"
+SENTINEL_SERVICE_PORT=$(get_port \\"redis\\" \\"TCP_SENTINEL\\")
+
+not_exists_dns_entry() {
+    if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep \\"^\${myip}\\" )\\" ]]; then
+        warn \\"$HEADLESS_SERVICE does not contain the IP of this pod: \${myip}\\"
+        return 1
+    fi
+    debug \\"$HEADLESS_SERVICE has my IP: \${myip}\\"
+    return 0
+}
+
+validate_quorum() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        quorum_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT --tls --cert \${REDIS_TLS_CERT_FILE} --key \${REDIS_TLS_KEY_FILE} --cacert \${REDIS_TLS_CA_FILE} sentinel master mymaster\\"
+    else
+        quorum_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT sentinel master mymaster\\"
+    fi
+
+    info \\"about to run the command: $quorum_info_command\\"
+    eval $quorum_info_command | grep -Fq \\"s_down\\"
+}
+
+trigger_manual_failover() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        failover_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT --tls --cert \${REDIS_TLS_CERT_FILE} --key \${REDIS_TLS_KEY_FILE} --cacert \${REDIS_TLS_CA_FILE} sentinel failover mymaster\\"
+    else
+        failover_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT sentinel failover mymaster\\"
+    fi
+
+    info \\"about to run the command: $failover_command\\"
+    eval $failover_command
+}
+
+get_sentinel_master_info() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        sentinel_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT --tls --cert \${REDIS_TLS_CERT_FILE} --key \${REDIS_TLS_KEY_FILE} --cacert \${REDIS_TLS_CA_FILE} sentinel get-master-addr-by-name mymaster\\"
+    else
+        sentinel_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT sentinel get-master-addr-by-name mymaster\\"
+    fi
+
+    info \\"about to run the command: $sentinel_info_command\\"
+    eval $sentinel_info_command
+}
+
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -f $REDIS_MASTER_PASSWORD_FILE ]] && export REDIS_MASTER_PASSWORD=\\"$(< \\"\${REDIS_MASTER_PASSWORD_FILE}\\")\\"
+
+# Waits for DNS to add this ip to the service DNS entry
+retry_while not_exists_dns_entry
+
+if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep -v \\"^\${myip}\\")\\" ]]; then
+    # Only node available on the network, master by default
+    export REDIS_REPLICATION_MODE=\\"master\\"
+else
+    export REDIS_REPLICATION_MODE=\\"slave\\"
+    
+    # Fetches current master's host and port
+    REDIS_SENTINEL_INFO=($(get_sentinel_master_info))
+    info \\"printing REDIS_SENTINEL_INFO=(\${REDIS_SENTINEL_INFO[0]},\${REDIS_SENTINEL_INFO[1]})\\"
+    REDIS_MASTER_HOST=\${REDIS_SENTINEL_INFO[0]}
+    REDIS_MASTER_PORT_NUMBER=\${REDIS_SENTINEL_INFO[1]}
+fi
+
+if [[ \\"$REDIS_REPLICATION_MODE\\" = \\"master\\" ]]; then
+    debug \\"Starting as master node\\"
+    if [[ ! -f /opt/bitnami/redis/etc/master.conf ]]; then
+        cp /opt/bitnami/redis/mounted-etc/master.conf /opt/bitnami/redis/etc/master.conf
+    fi
+else
+    debug \\"Starting as replica node\\"
+    if [[ ! -f /opt/bitnami/redis/etc/replica.conf ]];then
+        cp /opt/bitnami/redis/mounted-etc/replica.conf /opt/bitnami/redis/etc/replica.conf
+    fi
+fi
+
+if [[ ! -f /opt/bitnami/redis/etc/redis.conf ]];then
+    cp /opt/bitnami/redis/mounted-etc/redis.conf /opt/bitnami/redis/etc/redis.conf
+fi
+
+echo \\"\\" >> /opt/bitnami/redis/etc/replica.conf
+echo \\"replica-announce-port $REDISPORT\\" >> /opt/bitnami/redis/etc/replica.conf
+echo \\"replica-announce-ip $(get_full_hostname \\"$HOSTNAME\\")\\" >> /opt/bitnami/redis/etc/replica.conf
+ARGS=(\\"--port\\" \\"\${REDIS_PORT}\\")
+
+if [[ \\"$REDIS_REPLICATION_MODE\\" = \\"slave\\" ]]; then
+    ARGS+=(\\"--slaveof\\" \\"\${REDIS_MASTER_HOST}\\" \\"\${REDIS_MASTER_PORT_NUMBER}\\")
+fi
+ARGS+=(\\"--requirepass\\" \\"\${REDIS_PASSWORD}\\")
+ARGS+=(\\"--masterauth\\" \\"\${REDIS_MASTER_PASSWORD}\\")
+if [[ \\"$REDIS_REPLICATION_MODE\\" = \\"master\\" ]]; then
+    ARGS+=(\\"--include\\" \\"/opt/bitnami/redis/etc/master.conf\\")
+else
+    ARGS+=(\\"--include\\" \\"/opt/bitnami/redis/etc/replica.conf\\")
+fi
+ARGS+=(\\"--include\\" \\"/opt/bitnami/redis/etc/redis.conf\\")
+exec redis-server \\"\${ARGS[@]}\\"",
+      "start-sentinel.sh": "#!/bin/bash
+
+. /opt/bitnami/scripts/libos.sh
+. /opt/bitnami/scripts/libvalidations.sh
+. /opt/bitnami/scripts/libfile.sh
+
+HEADLESS_SERVICE=\\"redis-headless.default.svc.cluster.local\\"
+REDIS_SERVICE=\\"redis.default.svc.cluster.local\\"
+
+get_port() {
+    hostname=\\"$1\\"
+    type=\\"$2\\"
+
+    port_var=$(echo \\"\${hostname^^}_SERVICE_PORT_$type\\" | sed \\"s/-/_/g\\")
+    port=\${!port_var}
+    
+    if [ -z \\"$port\\" ]; then
+        case $type in
+            \\"SENTINEL\\")
+                echo 26379
+                ;;
+            \\"REDIS\\")
+                echo 6379
+                ;;
+        esac
+    else
+        echo $port
+    fi
+}
+    
+get_full_hostname() {
+    hostname=\\"$1\\"
+    echo \\"\${hostname}.\${HEADLESS_SERVICE}\\"
+}
+
+SERVPORT=$(get_port \\"$HOSTNAME\\" \\"SENTINEL\\")
+REDISPORT=$(get_port \\"$HOSTNAME\\" \\"REDIS\\")
+SENTINEL_SERVICE_PORT=$(get_port \\"redis\\" \\"TCP_SENTINEL\\")
+    
+myip=$(hostname -i)
+
+# If there are more than one IP, use the first IPv4 address
+if [[ \\"$myip\\" = *\\" \\"* ]]; then
+    myip=$(echo $myip | awk '{if ( match($0,/([0-9]+\\\\.)([0-9]+\\\\.)([0-9]+\\\\.)[0-9]+/) ) { print substr($0,RSTART,RLENGTH); } }')
+fi
+
+
+sentinel_conf_set() {
+    local -r key=\\"\${1:?missing key}\\"
+    local value=\\"\${2:-}\\"
+
+    # Sanitize inputs
+    value=\\"\${value//\\\\\\\\/\\\\\\\\\\\\\\\\}\\"
+    value=\\"\${value//&/\\\\&}\\"
+    value=\\"\${value//?/\\\\?}\\"
+    [[ \\"$value\\" = \\"\\" ]] && value=\\"\\\\\\"$value\\\\\\"\\"
+
+    replace_in_file \\"/opt/bitnami/redis-sentinel/etc/sentinel.conf\\" \\"^#*\\\\s*\\\\\${key} .*\\" \\"\${key} \${value}\\" false
+}
+sentinel_conf_add() {
+    echo $'\\\\n'\\"$@\\" >> \\"/opt/bitnami/redis-sentinel/etc/sentinel.conf\\"
+}
+host_id() {
+    echo \\"$1\\" | openssl sha1 | awk '{print $2}'
+}
+not_exists_dns_entry() {
+    if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep \\"^\${myip}\\" )\\" ]]; then
+        warn \\"$HEADLESS_SERVICE does not contain the IP of this pod: \${myip}\\"
+        return 1
+    fi
+    debug \\"$HEADLESS_SERVICE has my IP: \${myip}\\"
+    return 0
+}
+get_sentinel_master_info() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        sentinel_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT --tls --cert \${REDIS_TLS_CERT_FILE} --key \${REDIS_TLS_KEY_FILE} --cacert \${REDIS_TLS_CA_FILE} sentinel get-master-addr-by-name mymaster\\"
+    else
+        sentinel_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT sentinel get-master-addr-by-name mymaster\\"
+    fi
+
+    info \\"about to run the command: $sentinel_info_command\\"
+    eval $sentinel_info_command
+}
+
+# Waits for DNS to add this ip to the service DNS entry
+retry_while not_exists_dns_entry
+
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+
+cp /opt/bitnami/redis-sentinel/mounted-etc/sentinel.conf /opt/bitnami/redis-sentinel/etc/sentinel.conf
+printf \\"\\\\nsentinel auth-pass %s %s\\" \\"mymaster\\" \\"$REDIS_PASSWORD\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+printf \\"\\\\nrequirepass %s\\" \\"$REDIS_PASSWORD\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+printf \\"\\\\nsentinel myid %s\\" \\"$(host_id \\"$HOSTNAME\\")\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+
+if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep -v \\"^\${myip}\\")\\" ]]; then
+    # Only node available on the network, master by default
+    export REDIS_REPLICATION_MODE=\\"master\\"
+
+    REDIS_MASTER_HOST=$(get_full_hostname \\"$HOSTNAME\\")
+    REDIS_MASTER_PORT_NUMBER=\\"$REDISPORT\\"
+else
+    export REDIS_REPLICATION_MODE=\\"slave\\"
+
+    # Fetches current master's host and port
+    REDIS_SENTINEL_INFO=($(get_sentinel_master_info))
+    info \\"printing REDIS_SENTINEL_INFO=(\${REDIS_SENTINEL_INFO[0]},\${REDIS_SENTINEL_INFO[1]})\\" 
+    REDIS_MASTER_HOST=\${REDIS_SENTINEL_INFO[0]}
+    REDIS_MASTER_PORT_NUMBER=\${REDIS_SENTINEL_INFO[1]}
+fi
+
+sentinel_conf_set \\"sentinel monitor\\" \\"mymaster \\"$REDIS_MASTER_HOST\\" \\"$REDIS_MASTER_PORT_NUMBER\\" 2\\"
+
+add_known_sentinel() {
+    hostname=\\"$1\\"
+    ip=\\"$2\\"
+
+    if [[ -n \\"$hostname\\" && -n \\"$ip\\" && \\"$hostname\\" != \\"$HOSTNAME\\" ]]; then
+        sentinel_conf_add \\"sentinel known-sentinel mymaster $(get_full_hostname \\"$hostname\\") $(get_port \\"$hostname\\" \\"SENTINEL\\") $(host_id \\"$hostname\\")\\"
+    fi 
+}
+add_known_replica() {
+    hostname=\\"$1\\"
+    ip=\\"$2\\"
+
+    if [[ -n \\"$ip\\" && \\"$(get_full_hostname \\"$hostname\\")\\" != \\"$REDIS_MASTER_HOST\\" ]]; then
+        sentinel_conf_add \\"sentinel known-replica mymaster $(get_full_hostname \\"$hostname\\") $(get_port \\"$hostname\\" \\"REDIS\\")\\"
+    fi
+}
+
+# Add available hosts on the network as known replicas & sentinels
+for node in $(seq 0 $((3-1))); do
+    hostname=\\"redis-node-$node\\"
+    ip=\\"$(getent hosts \\"$hostname.$HEADLESS_SERVICE\\" | awk '{ print $1 }')\\"
+    add_known_sentinel \\"$hostname\\" \\"$ip\\"
+    add_known_replica \\"$hostname\\" \\"$ip\\"
+done
+    
+echo \\"\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+echo \\"sentinel announce-hostnames yes\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+echo \\"sentinel resolve-hostnames yes\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+echo \\"sentinel announce-port $SERVPORT\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+echo \\"sentinel announce-ip $(get_full_hostname \\"$HOSTNAME\\")\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+exec redis-server /opt/bitnami/redis-sentinel/etc/sentinel.conf --sentinel",
+    },
+    "kind": "ConfigMap",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-scripts",
+      "namespace": "test",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-headless",
+      "namespace": "test",
+    },
+    "spec": Object {
+      "clusterIP": "None",
+      "ports": Array [
+        Object {
+          "name": "tcp-redis",
+          "port": 6379,
+          "targetPort": "redis",
+        },
+        Object {
+          "name": "tcp-sentinel",
+          "port": 26379,
+          "targetPort": "redis-sentinel",
+        },
+      ],
+      "publishNotReadyAddresses": true,
+      "selector": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "type": "ClusterIP",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": Object {
+      "labels": Object {
+        "component": "node",
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis",
+      "namespace": "test",
+    },
+    "spec": Object {
+      "ports": Array [
+        Object {
+          "name": "tcp-redis",
+          "port": 6379,
+          "targetPort": 6379,
+        },
+        Object {
+          "name": "tcp-sentinel",
+          "port": 26379,
+          "targetPort": 26379,
+        },
+      ],
+      "selector": Object {
+        "component": "node",
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "type": "ClusterIP",
+    },
+  },
+  Object {
+    "apiVersion": "apps/v1",
+    "kind": "StatefulSet",
+    "metadata": Object {
+      "labels": Object {
+        "component": "node",
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-node",
+      "namespace": "test",
+    },
+    "spec": Object {
+      "selector": Object {
+        "matchLabels": Object {
+          "component": "node",
+          "instance": "tt-dev-redis",
+          "name": "tt-dev-redis",
+        },
+      },
+      "serviceName": "tt-dev-redis-headless",
+      "template": Object {
+        "metadata": Object {
+          "labels": Object {
+            "component": "node",
+            "instance": "tt-dev-redis",
+            "name": "tt-dev-redis",
+          },
+        },
+        "spec": Object {
+          "affinity": Object {
+            "podAntiAffinity": Object {
+              "preferredDuringSchedulingIgnoredDuringExecution": Array [
+                Object {
+                  "podAffinityTerm": Object {
+                    "labelSelector": Object {
+                      "matchLabels": Object {
+                        "component": "node",
+                        "instance": "tt-dev-redis",
+                        "name": "tt-dev-redis",
+                      },
+                    },
+                    "topologyKey": "kubernetes.io/hostname",
+                  },
+                  "weight": 1,
+                },
+              ],
+            },
+          },
+          "containers": Array [
+            Object {
+              "args": Array [
+                "-c",
+                "/opt/bitnami/scripts/start-scripts/start-node.sh",
+              ],
+              "command": Array [
+                "/bin/bash",
+              ],
+              "env": Array [
+                Object {
+                  "name": "BITNAMI_DEBUG",
+                  "value": "false",
+                },
+                Object {
+                  "name": "REDIS_MASTER_PORT_NUMBER",
+                  "value": "6379",
+                },
+                Object {
+                  "name": "ALLOW_EMPTY_PASSWORD",
+                  "value": "no",
+                },
+                Object {
+                  "name": "REDIS_PASSWORD",
+                  "valueFrom": Object {
+                    "secretKeyRef": Object {
+                      "key": "redis-password",
+                      "name": "tt-dev-redis",
+                    },
+                  },
+                },
+                Object {
+                  "name": "REDIS_MASTER_PASSWORD",
+                  "valueFrom": Object {
+                    "secretKeyRef": Object {
+                      "key": "redis-password",
+                      "name": "tt-dev-redis",
+                    },
+                  },
+                },
+                Object {
+                  "name": "REDIS_TLS_ENABLED",
+                  "value": "no",
+                },
+                Object {
+                  "name": "REDIS_PORT",
+                  "value": "6379",
+                },
+                Object {
+                  "name": "REDIS_DATA_DIR",
+                  "value": "/data",
+                },
+              ],
+              "image": "docker.io/bitnami/redis-sentinel:6.2.6-debian-10-r49",
+              "imagePullPolicy": "IfNotPresent",
+              "lifecycle": Object {
+                "preStop": Object {
+                  "exec": Object {
+                    "command": Array [
+                      "/bin/bash",
+                      "-c",
+                      "/opt/bitnami/scripts/start-scripts/prestop-redis.sh",
+                    ],
+                  },
+                },
+              },
+              "livenessProbe": Object {
+                "exec": Object {
+                  "command": Array [
+                    "sh",
+                    "-c",
+                    "/health/ping_liveness_local.sh 5",
+                  ],
+                },
+                "failureThreshold": 5,
+                "initialDelaySeconds": 20,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 5,
+              },
+              "name": "redis",
+              "ports": Array [
+                Object {
+                  "containerPort": 6379,
+                  "name": "redis",
+                },
+              ],
+              "readinessProbe": Object {
+                "exec": Object {
+                  "command": Array [
+                    "sh",
+                    "-c",
+                    "/health/ping_readiness_local.sh 5",
+                  ],
+                },
+                "failureThreshold": 5,
+                "initialDelaySeconds": 20,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 1,
+              },
+              "resources": Object {
+                "limits": Object {},
+                "requests": Object {},
+              },
+              "securityContext": Object {
+                "runAsUser": 1001,
+              },
+              "volumeMounts": Array [
+                Object {
+                  "mountPath": "/opt/bitnami/scripts/start-scripts",
+                  "name": "start-scripts",
+                },
+                Object {
+                  "mountPath": "/health",
+                  "name": "health",
+                },
+                Object {
+                  "mountPath": "/data",
+                  "name": "redis-data",
+                },
+                Object {
+                  "mountPath": "/opt/bitnami/redis/mounted-etc",
+                  "name": "config",
+                },
+                Object {
+                  "mountPath": "/opt/bitnami/redis/etc",
+                  "name": "redis-tmp-conf",
+                },
+                Object {
+                  "mountPath": "/tmp",
+                  "name": "tmp",
+                },
+              ],
+            },
+            Object {
+              "args": Array [
+                "-c",
+                "/opt/bitnami/scripts/start-scripts/start-sentinel.sh",
+              ],
+              "command": Array [
+                "/bin/bash",
+              ],
+              "env": Array [
+                Object {
+                  "name": "BITNAMI_DEBUG",
+                  "value": "false",
+                },
+                Object {
+                  "name": "REDIS_PASSWORD",
+                  "valueFrom": Object {
+                    "secretKeyRef": Object {
+                      "key": "redis-password",
+                      "name": "tt-dev-redis",
+                    },
+                  },
+                },
+                Object {
+                  "name": "REDIS_SENTINEL_TLS_ENABLED",
+                  "value": "no",
+                },
+                Object {
+                  "name": "REDIS_SENTINEL_PORT",
+                  "value": "26379",
+                },
+              ],
+              "image": "docker.io/bitnami/redis-sentinel:6.2.6-debian-10-r49",
+              "imagePullPolicy": "IfNotPresent",
+              "lifecycle": Object {
+                "preStop": Object {
+                  "exec": Object {
+                    "command": Array [
+                      "/bin/bash",
+                      "-c",
+                      "/opt/bitnami/scripts/start-scripts/prestop-sentinel.sh",
+                    ],
+                  },
+                },
+              },
+              "livenessProbe": Object {
+                "exec": Object {
+                  "command": Array [
+                    "sh",
+                    "-c",
+                    "/health/ping_sentinel.sh 5",
+                  ],
+                },
+                "failureThreshold": 5,
+                "initialDelaySeconds": 20,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 5,
+              },
+              "name": "sentinel",
+              "ports": Array [
+                Object {
+                  "containerPort": 26379,
+                  "name": "redis-sentinel",
+                },
+              ],
+              "readinessProbe": Object {
+                "exec": Object {
+                  "command": Array [
+                    "sh",
+                    "-c",
+                    "/health/ping_sentinel.sh 5",
+                  ],
+                },
+                "failureThreshold": 5,
+                "initialDelaySeconds": 20,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 1,
+              },
+              "resources": Object {
+                "limits": Object {},
+                "requests": Object {},
+              },
+              "securityContext": Object {
+                "runAsUser": 1001,
+              },
+              "volumeMounts": Array [
+                Object {
+                  "mountPath": "/opt/bitnami/scripts/start-scripts",
+                  "name": "start-scripts",
+                },
+                Object {
+                  "mountPath": "/health",
+                  "name": "health",
+                },
+                Object {
+                  "mountPath": "/data",
+                  "name": "redis-data",
+                },
+                Object {
+                  "mountPath": "/opt/bitnami/redis-sentinel/mounted-etc",
+                  "name": "config",
+                },
+                Object {
+                  "mountPath": "/opt/bitnami/redis-sentinel/etc",
+                  "name": "sentinel-tmp-conf",
+                },
+              ],
+            },
+          ],
+          "securityContext": Object {
+            "fsGroup": 1001,
+          },
+          "serviceAccountName": "tt-dev-redis",
+          "terminationGracePeriodSeconds": 30,
+          "volumes": Array [
+            Object {
+              "configMap": Object {
+                "defaultMode": 755,
+                "name": "tt-dev-redis-scripts",
+              },
+              "name": "start-scripts",
+            },
+            Object {
+              "configMap": Object {
+                "defaultMode": 755,
+                "name": "tt-dev-redis-health",
+              },
+              "name": "health",
+            },
+            Object {
+              "configMap": Object {
+                "name": "tt-dev-redis-configuration",
+              },
+              "name": "config",
+            },
+            Object {
+              "emptyDir": Object {},
+              "name": "sentinel-tmp-conf",
+            },
+            Object {
+              "emptyDir": Object {},
+              "name": "redis-tmp-conf",
+            },
+            Object {
+              "emptyDir": Object {},
+              "name": "tmp",
+            },
+          ],
+        },
+      },
+      "updateStrategy": Object {
+        "rollingUpdate": Object {},
+        "type": "RollingUpdate",
+      },
+      "volumeClaimTemplates": Array [
+        Object {
+          "metadata": Object {
+            "labels": Object {
+              "component": "node",
+              "instance": "tt-dev-redis",
+              "name": "tt-dev-redis",
+            },
+            "name": "tt-dev-redis-data",
+          },
+          "spec": Object {
+            "accessModes": Array [
+              "ReadWriteOnce",
+            ],
+            "resources": Object {
+              "requests": Object {
+                "storage": "10Gi",
+              },
+            },
+            "storageClassName": "test-tt-dev-redis-storageclass-c8dabe26",
+          },
+        },
+      ],
+    },
+  },
+]
+`;
+
+exports[`with values 1`] = `
+Array [
+  Object {
+    "apiVersion": "storage.k8s.io/v1",
+    "kind": "StorageClass",
+    "metadata": Object {
+      "name": "test-tt-dev-redis-storageclass-c8dabe26",
+      "namespace": "test",
+    },
+    "parameters": Object {
+      "fsType": "ext3",
+      "iopsPerGB": "100",
+      "type": "io1",
+    },
+    "provisioner": "kubernetes.io/aws-ebs",
+  },
+  Object {
+    "apiVersion": "v1",
+    "automountServiceAccountToken": true,
+    "kind": "ServiceAccount",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis",
+      "namespace": "test",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "data": Object {
+      "redis-password": "test2",
+    },
+    "kind": "Secret",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis",
+      "namespace": "test",
+    },
+    "type": "Opaque",
+  },
+  Object {
+    "apiVersion": "v1",
+    "data": Object {
+      "master.conf": "-
+    dir /data
+    # User-supplied master configuration:
+    rename-command FLUSHDB \\"\\"
+    rename-command FLUSHALL \\"\\"
+    # End of master configuration
+",
+      "redis.conf": "-
+    # User-supplied common configuration:
+    # Enable AOF https://redis.io/topics/persistence#append-only-file
+    appendonly yes
+    # Disable RDB persistence, AOF persistence already enabled.
+    save \\"\\"
+    # End of common configuration
+",
+      "replica.conf": "-
+    dir /data
+    slave-read-only yes
+    # User-supplied replica configuration:
+    rename-command FLUSHDB \\"\\"
+    rename-command FLUSHALL \\"\\"
+    # End of replica configuration
+",
+      "sentinel.conf": "-
+    dir \\"/tmp\\"
+    port 26379
+    sentinel monitor mymaster redis-node-0.redis-headless.default.svc.cluster.local 6379 2
+    sentinel down-after-milliseconds mymaster 60000
+    sentinel failover-timeout mymaster 18000
+    sentinel parallel-syncs mymaster 1
+    # User-supplied sentinel configuration:
+    # End of sentinel configuration
+",
+    },
+    "kind": "ConfigMap",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-configuration",
+      "namespace": "test",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "data": Object {
+      "parse_sentinels.awk": "/ip/ {FOUND_IP=1}
+/port/ {FOUND_PORT=1}
+/runid/ {FOUND_RUNID=1}
+!/ip|port|runid/ {
+  if (FOUND_IP==1) {
+    IP=$1; FOUND_IP=0;
+  }
+  else if (FOUND_PORT==1) {
+    PORT=$1;
+    FOUND_PORT=0;
+  } else if (FOUND_RUNID==1) {
+    printf \\"
+sentinel known-sentinel mymaster %s %s %s\\", IP, PORT, $0; FOUND_RUNID=0;
+  }
+}",
+      "ping_liveliness_local_and_master.sh": "script_dir=\\"$(dirname \\"$0\\")\\"
+exit_status=0
+\\"$script_dir/ping_liveness_local.sh\\" $1 || exit_status=$?
+\\"$script_dir/ping_liveness_master.sh\\" $1 || exit_status=$?
+exit $exit_status",
+      "ping_liveness_master.sh": "    #!/bin/bash
+
+    [[ -f $REDIS_MASTER_PASSWORD_FILE ]] && export REDIS_MASTER_PASSWORD=\\"$(< \\"\${REDIS_MASTER_PASSWORD_FILE}\\")\\"
+    [[ -n \\"$REDIS_MASTER_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_MASTER_PASSWORD\\"
+    response=$(
+      timeout -s 3 $1       redis-cli         -h $REDIS_MASTER_HOST         -p $REDIS_MASTER_PORT_NUMBER         ping
+    )
+    if [ \\"$response\\" != \\"PONG\\" ] && [ \\"$response\\" != \\"LOADING Redis is loading the dataset in memory\\" ]; then
+      echo \\"$response\\"
+      exit 1
+    fi",
+      "ping_livesness_local.sh": "#!/bin/bash
+
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_PORT     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ] && [ \\"$response\\" != \\"LOADING Redis is loading the dataset in memory\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
+      "ping_readiness_local.sh": "#!/bin/bash
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_PORT     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
+      "ping_readiness_local_and_master.sh": "script_dir=\\"$(dirname \\"$0\\")\\"
+exit_status=0
+\\"$script_dir/ping_readiness_local.sh\\" $1 || exit_status=$?
+\\"$script_dir/ping_readiness_master.sh\\" $1 || exit_status=$?
+exit $exit_status",
+      "ping_readiness_master.sh": "#!/bin/bash
+
+[[ -f $REDIS_MASTER_PASSWORD_FILE ]] && export REDIS_MASTER_PASSWORD=\\"$(< \\"\${REDIS_MASTER_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_MASTER_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_MASTER_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h $REDIS_MASTER_HOST     -p $REDIS_MASTER_PORT_NUMBER     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
+      "ping_sentinel.sh": "#!/bin/bash
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_SENTINEL_PORT     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
+    },
+    "kind": "ConfigMap",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-health",
+      "namespace": "test",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "data": Object {
+      "prestop-redis.sh": "#!/bin/bash
+
+. /opt/bitnami/scripts/libvalidations.sh
+. /opt/bitnami/scripts/libos.sh
+
+run_redis_command() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        redis-cli -h 127.0.0.1 -p \\"$REDIS_TLS_PORT\\" --tls --cert \\"$REDIS_TLS_CERT_FILE\\" --key \\"$REDIS_TLS_KEY_FILE\\" --cacert \\"$REDIS_TLS_CA_FILE\\" \\"$@\\"
+    else
+        redis-cli -h 127.0.0.1 -p \${REDIS_PORT} \\"$@\\"
+    fi
+}
+failover_finished() {
+    REDIS_ROLE=$(run_redis_command role | head -1)
+    [[ \\"$REDIS_ROLE\\" != \\"master\\" ]]
+}
+
+# redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+[[ -f \\"$REDIS_PASSWORD_FILE\\" ]] && export REDISCLI_AUTH=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+
+if ! failover_finished; then
+    echo \\"Waiting for sentinel to run failover for up to 20s\\"
+    retry_while \\"failover_finished\\" \\"20\\" 1
+else
+    exit 0
+fi",
+      "prestop-sentinel.sh": "#!/bin/bash
+
+. /opt/bitnami/scripts/libvalidations.sh
+. /opt/bitnami/scripts/libos.sh
+
+HEADLESS_SERVICE=\\"redis-headless.default.svc.cluster.local\\"
+SENTINEL_SERVICE_ENV_NAME=REDIS_SERVICE_PORT_TCP_SENTINEL
+SENTINEL_SERVICE_PORT=\${!SENTINEL_SERVICE_ENV_NAME}
+
+get_full_hostname() {
+    hostname=\\"$1\\"
+    echo \\"\${hostname}.\${HEADLESS_SERVICE}\\"
+}
+run_sentinel_command() {
+    if is_boolean_yes \\"$REDIS_SENTINEL_TLS_ENABLED\\"; then
+        redis-cli -h \\"$REDIS_SERVICE\\" -p \\"$SENTINEL_SERVICE_PORT\\" --tls --cert \\"$REDIS_SENTINEL_TLS_CERT_FILE\\" --key \\"$REDIS_SENTINEL_TLS_KEY_FILE\\" --cacert \\"$REDIS_SENTINEL_TLS_CA_FILE\\" sentinel \\"$@\\"
+    else
+        redis-cli -h \\"$REDIS_SERVICE\\" -p \\"$SENTINEL_SERVICE_PORT\\" sentinel \\"$@\\"
+    fi
+}
+failover_finished() {
+  REDIS_SENTINEL_INFO=($(run_sentinel_command get-master-addr-by-name \\"mymaster\\"))
+  REDIS_MASTER_HOST=\\"\${REDIS_SENTINEL_INFO[0]}\\"
+  [[ \\"$REDIS_MASTER_HOST\\" != \\"$(get_full_hostname $HOSTNAME)\\" ]]
+}
+
+REDIS_SERVICE=\\"redis.default.svc.cluster.local\\"
+
+# redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+[[ -f \\"$REDIS_PASSWORD_FILE\\" ]] && export REDISCLI_AUTH=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+
+if ! failover_finished; then
+    echo \\"I am the master pod and you are stopping me. Starting sentinel failover\\"
+    # if I am the master, issue a command to failover once and then wait for the failover to finish
+    run_sentinel_command failover \\"mymaster\\"
+    if retry_while \\"failover_finished\\" \\"20\\" 1; then
+        echo \\"Master has been successfuly failed over to a different pod.\\"
+        exit 0
+    else
+        echo \\"Master failover failed\\"
+        exit 1
+    fi
+else
+    exit 0
+fi",
+      "start-node.sh": "#!/bin/bash
+
+. /opt/bitnami/scripts/libos.sh
+. /opt/bitnami/scripts/liblog.sh
+. /opt/bitnami/scripts/libvalidations.sh
+
+get_port() {
+    hostname=\\"$1\\"
+    type=\\"$2\\"
+
+    port_var=$(echo \\"\${hostname^^}_SERVICE_PORT_$type\\" | sed \\"s/-/_/g\\")
+    port=\${!port_var}
+    
+    if [ -z \\"$port\\" ]; then
+        case $type in
+            \\"SENTINEL\\")
+                echo 26379
+                ;;
+            \\"REDIS\\")
+                echo 6379
+                ;;
+        esac
+    else
+        echo $port
+    fi
+}
+
+get_full_hostname() {
+    hostname=\\"$1\\"
+    echo \\"\${hostname}.\${HEADLESS_SERVICE}\\"
+}
+
+REDISPORT=$(get_port \\"$HOSTNAME\\" \\"REDIS\\")
+
+myip=$(hostname -i)
+
+# If there are more than one IP, use the first IPv4 address
+if [[ \\"$myip\\" = *\\" \\"* ]]; then
+    myip=$(echo $myip | awk '{if ( match($0,/([0-9]+.)([0-9]+.)([0-9]+.)[0-9]+/) ) { print substr($0,RSTART,RLENGTH); } }')
+fi
+
+HEADLESS_SERVICE=\\"redis-headless.default.svc.cluster.local\\"
+REDIS_SERVICE=\\"redis.default.svc.cluster.local\\"
+SENTINEL_SERVICE_PORT=$(get_port \\"redis\\" \\"TCP_SENTINEL\\")
+
+not_exists_dns_entry() {
+    if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep \\"^\${myip}\\" )\\" ]]; then
+        warn \\"$HEADLESS_SERVICE does not contain the IP of this pod: \${myip}\\"
+        return 1
+    fi
+    debug \\"$HEADLESS_SERVICE has my IP: \${myip}\\"
+    return 0
+}
+
+validate_quorum() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        quorum_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT --tls --cert \${REDIS_TLS_CERT_FILE} --key \${REDIS_TLS_KEY_FILE} --cacert \${REDIS_TLS_CA_FILE} sentinel master mymaster\\"
+    else
+        quorum_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT sentinel master mymaster\\"
+    fi
+
+    info \\"about to run the command: $quorum_info_command\\"
+    eval $quorum_info_command | grep -Fq \\"s_down\\"
+}
+
+trigger_manual_failover() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        failover_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT --tls --cert \${REDIS_TLS_CERT_FILE} --key \${REDIS_TLS_KEY_FILE} --cacert \${REDIS_TLS_CA_FILE} sentinel failover mymaster\\"
+    else
+        failover_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT sentinel failover mymaster\\"
+    fi
+
+    info \\"about to run the command: $failover_command\\"
+    eval $failover_command
+}
+
+get_sentinel_master_info() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        sentinel_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT --tls --cert \${REDIS_TLS_CERT_FILE} --key \${REDIS_TLS_KEY_FILE} --cacert \${REDIS_TLS_CA_FILE} sentinel get-master-addr-by-name mymaster\\"
+    else
+        sentinel_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT sentinel get-master-addr-by-name mymaster\\"
+    fi
+
+    info \\"about to run the command: $sentinel_info_command\\"
+    eval $sentinel_info_command
+}
+
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -f $REDIS_MASTER_PASSWORD_FILE ]] && export REDIS_MASTER_PASSWORD=\\"$(< \\"\${REDIS_MASTER_PASSWORD_FILE}\\")\\"
+
+# Waits for DNS to add this ip to the service DNS entry
+retry_while not_exists_dns_entry
+
+if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep -v \\"^\${myip}\\")\\" ]]; then
+    # Only node available on the network, master by default
+    export REDIS_REPLICATION_MODE=\\"master\\"
+else
+    export REDIS_REPLICATION_MODE=\\"slave\\"
+    
+    # Fetches current master's host and port
+    REDIS_SENTINEL_INFO=($(get_sentinel_master_info))
+    info \\"printing REDIS_SENTINEL_INFO=(\${REDIS_SENTINEL_INFO[0]},\${REDIS_SENTINEL_INFO[1]})\\"
+    REDIS_MASTER_HOST=\${REDIS_SENTINEL_INFO[0]}
+    REDIS_MASTER_PORT_NUMBER=\${REDIS_SENTINEL_INFO[1]}
+fi
+
+if [[ \\"$REDIS_REPLICATION_MODE\\" = \\"master\\" ]]; then
+    debug \\"Starting as master node\\"
+    if [[ ! -f /opt/bitnami/redis/etc/master.conf ]]; then
+        cp /opt/bitnami/redis/mounted-etc/master.conf /opt/bitnami/redis/etc/master.conf
+    fi
+else
+    debug \\"Starting as replica node\\"
+    if [[ ! -f /opt/bitnami/redis/etc/replica.conf ]];then
+        cp /opt/bitnami/redis/mounted-etc/replica.conf /opt/bitnami/redis/etc/replica.conf
+    fi
+fi
+
+if [[ ! -f /opt/bitnami/redis/etc/redis.conf ]];then
+    cp /opt/bitnami/redis/mounted-etc/redis.conf /opt/bitnami/redis/etc/redis.conf
+fi
+
+echo \\"\\" >> /opt/bitnami/redis/etc/replica.conf
+echo \\"replica-announce-port $REDISPORT\\" >> /opt/bitnami/redis/etc/replica.conf
+echo \\"replica-announce-ip $(get_full_hostname \\"$HOSTNAME\\")\\" >> /opt/bitnami/redis/etc/replica.conf
+ARGS=(\\"--port\\" \\"\${REDIS_PORT}\\")
+
+if [[ \\"$REDIS_REPLICATION_MODE\\" = \\"slave\\" ]]; then
+    ARGS+=(\\"--slaveof\\" \\"\${REDIS_MASTER_HOST}\\" \\"\${REDIS_MASTER_PORT_NUMBER}\\")
+fi
+ARGS+=(\\"--requirepass\\" \\"\${REDIS_PASSWORD}\\")
+ARGS+=(\\"--masterauth\\" \\"\${REDIS_MASTER_PASSWORD}\\")
+if [[ \\"$REDIS_REPLICATION_MODE\\" = \\"master\\" ]]; then
+    ARGS+=(\\"--include\\" \\"/opt/bitnami/redis/etc/master.conf\\")
+else
+    ARGS+=(\\"--include\\" \\"/opt/bitnami/redis/etc/replica.conf\\")
+fi
+ARGS+=(\\"--include\\" \\"/opt/bitnami/redis/etc/redis.conf\\")
+exec redis-server \\"\${ARGS[@]}\\"",
+      "start-sentinel.sh": "#!/bin/bash
+
+. /opt/bitnami/scripts/libos.sh
+. /opt/bitnami/scripts/libvalidations.sh
+. /opt/bitnami/scripts/libfile.sh
+
+HEADLESS_SERVICE=\\"redis-headless.default.svc.cluster.local\\"
+REDIS_SERVICE=\\"redis.default.svc.cluster.local\\"
+
+get_port() {
+    hostname=\\"$1\\"
+    type=\\"$2\\"
+
+    port_var=$(echo \\"\${hostname^^}_SERVICE_PORT_$type\\" | sed \\"s/-/_/g\\")
+    port=\${!port_var}
+    
+    if [ -z \\"$port\\" ]; then
+        case $type in
+            \\"SENTINEL\\")
+                echo 26379
+                ;;
+            \\"REDIS\\")
+                echo 6379
+                ;;
+        esac
+    else
+        echo $port
+    fi
+}
+    
+get_full_hostname() {
+    hostname=\\"$1\\"
+    echo \\"\${hostname}.\${HEADLESS_SERVICE}\\"
+}
+
+SERVPORT=$(get_port \\"$HOSTNAME\\" \\"SENTINEL\\")
+REDISPORT=$(get_port \\"$HOSTNAME\\" \\"REDIS\\")
+SENTINEL_SERVICE_PORT=$(get_port \\"redis\\" \\"TCP_SENTINEL\\")
+    
+myip=$(hostname -i)
+
+# If there are more than one IP, use the first IPv4 address
+if [[ \\"$myip\\" = *\\" \\"* ]]; then
+    myip=$(echo $myip | awk '{if ( match($0,/([0-9]+\\\\.)([0-9]+\\\\.)([0-9]+\\\\.)[0-9]+/) ) { print substr($0,RSTART,RLENGTH); } }')
+fi
+
+
+sentinel_conf_set() {
+    local -r key=\\"\${1:?missing key}\\"
+    local value=\\"\${2:-}\\"
+
+    # Sanitize inputs
+    value=\\"\${value//\\\\\\\\/\\\\\\\\\\\\\\\\}\\"
+    value=\\"\${value//&/\\\\&}\\"
+    value=\\"\${value//?/\\\\?}\\"
+    [[ \\"$value\\" = \\"\\" ]] && value=\\"\\\\\\"$value\\\\\\"\\"
+
+    replace_in_file \\"/opt/bitnami/redis-sentinel/etc/sentinel.conf\\" \\"^#*\\\\s*\\\\\${key} .*\\" \\"\${key} \${value}\\" false
+}
+sentinel_conf_add() {
+    echo $'\\\\n'\\"$@\\" >> \\"/opt/bitnami/redis-sentinel/etc/sentinel.conf\\"
+}
+host_id() {
+    echo \\"$1\\" | openssl sha1 | awk '{print $2}'
+}
+not_exists_dns_entry() {
+    if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep \\"^\${myip}\\" )\\" ]]; then
+        warn \\"$HEADLESS_SERVICE does not contain the IP of this pod: \${myip}\\"
+        return 1
+    fi
+    debug \\"$HEADLESS_SERVICE has my IP: \${myip}\\"
+    return 0
+}
+get_sentinel_master_info() {
+    if is_boolean_yes \\"$REDIS_TLS_ENABLED\\"; then
+        sentinel_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT --tls --cert \${REDIS_TLS_CERT_FILE} --key \${REDIS_TLS_KEY_FILE} --cacert \${REDIS_TLS_CA_FILE} sentinel get-master-addr-by-name mymaster\\"
+    else
+        sentinel_info_command=\\"REDISCLI_AUTH=\\"$REDIS_PASSWORD\\" redis-cli -h $REDIS_SERVICE -p $SENTINEL_SERVICE_PORT sentinel get-master-addr-by-name mymaster\\"
+    fi
+
+    info \\"about to run the command: $sentinel_info_command\\"
+    eval $sentinel_info_command
+}
+
+# Waits for DNS to add this ip to the service DNS entry
+retry_while not_exists_dns_entry
+
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+
+cp /opt/bitnami/redis-sentinel/mounted-etc/sentinel.conf /opt/bitnami/redis-sentinel/etc/sentinel.conf
+printf \\"\\\\nsentinel auth-pass %s %s\\" \\"mymaster\\" \\"$REDIS_PASSWORD\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+printf \\"\\\\nrequirepass %s\\" \\"$REDIS_PASSWORD\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+printf \\"\\\\nsentinel myid %s\\" \\"$(host_id \\"$HOSTNAME\\")\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+
+if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep -v \\"^\${myip}\\")\\" ]]; then
+    # Only node available on the network, master by default
+    export REDIS_REPLICATION_MODE=\\"master\\"
+
+    REDIS_MASTER_HOST=$(get_full_hostname \\"$HOSTNAME\\")
+    REDIS_MASTER_PORT_NUMBER=\\"$REDISPORT\\"
+else
+    export REDIS_REPLICATION_MODE=\\"slave\\"
+
+    # Fetches current master's host and port
+    REDIS_SENTINEL_INFO=($(get_sentinel_master_info))
+    info \\"printing REDIS_SENTINEL_INFO=(\${REDIS_SENTINEL_INFO[0]},\${REDIS_SENTINEL_INFO[1]})\\" 
+    REDIS_MASTER_HOST=\${REDIS_SENTINEL_INFO[0]}
+    REDIS_MASTER_PORT_NUMBER=\${REDIS_SENTINEL_INFO[1]}
+fi
+
+sentinel_conf_set \\"sentinel monitor\\" \\"mymaster \\"$REDIS_MASTER_HOST\\" \\"$REDIS_MASTER_PORT_NUMBER\\" 2\\"
+
+add_known_sentinel() {
+    hostname=\\"$1\\"
+    ip=\\"$2\\"
+
+    if [[ -n \\"$hostname\\" && -n \\"$ip\\" && \\"$hostname\\" != \\"$HOSTNAME\\" ]]; then
+        sentinel_conf_add \\"sentinel known-sentinel mymaster $(get_full_hostname \\"$hostname\\") $(get_port \\"$hostname\\" \\"SENTINEL\\") $(host_id \\"$hostname\\")\\"
+    fi 
+}
+add_known_replica() {
+    hostname=\\"$1\\"
+    ip=\\"$2\\"
+
+    if [[ -n \\"$ip\\" && \\"$(get_full_hostname \\"$hostname\\")\\" != \\"$REDIS_MASTER_HOST\\" ]]; then
+        sentinel_conf_add \\"sentinel known-replica mymaster $(get_full_hostname \\"$hostname\\") $(get_port \\"$hostname\\" \\"REDIS\\")\\"
+    fi
+}
+
+# Add available hosts on the network as known replicas & sentinels
+for node in $(seq 0 $((3-1))); do
+    hostname=\\"redis-node-$node\\"
+    ip=\\"$(getent hosts \\"$hostname.$HEADLESS_SERVICE\\" | awk '{ print $1 }')\\"
+    add_known_sentinel \\"$hostname\\" \\"$ip\\"
+    add_known_replica \\"$hostname\\" \\"$ip\\"
+done
+    
+echo \\"\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+echo \\"sentinel announce-hostnames yes\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+echo \\"sentinel resolve-hostnames yes\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+echo \\"sentinel announce-port $SERVPORT\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+echo \\"sentinel announce-ip $(get_full_hostname \\"$HOSTNAME\\")\\" >> /opt/bitnami/redis-sentinel/etc/sentinel.conf
+exec redis-server /opt/bitnami/redis-sentinel/etc/sentinel.conf --sentinel",
+    },
+    "kind": "ConfigMap",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-scripts",
+      "namespace": "test",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": Object {
+      "labels": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-headless",
+      "namespace": "test",
+    },
+    "spec": Object {
+      "clusterIP": "None",
+      "ports": Array [
+        Object {
+          "name": "tcp-redis",
+          "port": 6379,
+          "targetPort": "redis",
+        },
+        Object {
+          "name": "tcp-sentinel",
+          "port": 26379,
+          "targetPort": "redis-sentinel",
+        },
+      ],
+      "publishNotReadyAddresses": true,
+      "selector": Object {
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "type": "ClusterIP",
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": Object {
+      "labels": Object {
+        "component": "node",
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis",
+      "namespace": "test",
+    },
+    "spec": Object {
+      "ports": Array [
+        Object {
+          "name": "tcp-redis",
+          "port": 6379,
+          "targetPort": 6379,
+        },
+        Object {
+          "name": "tcp-sentinel",
+          "port": 26379,
+          "targetPort": 26379,
+        },
+      ],
+      "selector": Object {
+        "component": "node",
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "type": "ClusterIP",
+    },
+  },
+  Object {
+    "apiVersion": "apps/v1",
+    "kind": "StatefulSet",
+    "metadata": Object {
+      "labels": Object {
+        "component": "node",
+        "instance": "tt-dev-redis",
+        "name": "tt-dev-redis",
+      },
+      "name": "tt-dev-redis-node",
+      "namespace": "test",
+    },
+    "spec": Object {
+      "replicas": 2,
+      "selector": Object {
+        "matchLabels": Object {
+          "component": "node",
+          "instance": "tt-dev-redis",
+          "name": "tt-dev-redis",
+        },
+      },
+      "serviceName": "tt-dev-redis-headless",
+      "template": Object {
+        "metadata": Object {
+          "labels": Object {
+            "component": "node",
+            "instance": "tt-dev-redis",
+            "name": "tt-dev-redis",
+          },
+        },
+        "spec": Object {
+          "affinity": Object {
+            "podAntiAffinity": Object {
+              "preferredDuringSchedulingIgnoredDuringExecution": Array [
+                Object {
+                  "podAffinityTerm": Object {
+                    "labelSelector": Object {
+                      "matchLabels": Object {
+                        "component": "node",
+                        "instance": "tt-dev-redis",
+                        "name": "tt-dev-redis",
+                      },
+                    },
+                    "topologyKey": "kubernetes.io/hostname",
+                  },
+                  "weight": 1,
+                },
+              ],
+            },
+          },
+          "containers": Array [
+            Object {
+              "args": Array [
+                "-c",
+                "/opt/bitnami/scripts/start-scripts/start-node.sh",
+              ],
+              "command": Array [
+                "/bin/bash",
+              ],
+              "env": Array [
+                Object {
+                  "name": "BITNAMI_DEBUG",
+                  "value": "false",
+                },
+                Object {
+                  "name": "REDIS_MASTER_PORT_NUMBER",
+                  "value": "6379",
+                },
+                Object {
+                  "name": "ALLOW_EMPTY_PASSWORD",
+                  "value": "no",
+                },
+                Object {
+                  "name": "REDIS_PASSWORD",
+                  "valueFrom": Object {
+                    "secretKeyRef": Object {
+                      "key": "redis-password",
+                      "name": "tt-dev-redis",
+                    },
+                  },
+                },
+                Object {
+                  "name": "REDIS_MASTER_PASSWORD",
+                  "valueFrom": Object {
+                    "secretKeyRef": Object {
+                      "key": "redis-password",
+                      "name": "tt-dev-redis",
+                    },
+                  },
+                },
+                Object {
+                  "name": "REDIS_TLS_ENABLED",
+                  "value": "no",
+                },
+                Object {
+                  "name": "REDIS_PORT",
+                  "value": "6379",
+                },
+                Object {
+                  "name": "REDIS_DATA_DIR",
+                  "value": "/data",
+                },
+              ],
+              "image": "test-image",
+              "imagePullPolicy": "IfNotPresent",
+              "lifecycle": Object {
+                "preStop": Object {
+                  "exec": Object {
+                    "command": Array [
+                      "/bin/bash",
+                      "-c",
+                      "/opt/bitnami/scripts/start-scripts/prestop-redis.sh",
+                    ],
+                  },
+                },
+              },
+              "livenessProbe": Object {
+                "exec": Object {
+                  "command": Array [
+                    "sh",
+                    "-c",
+                    "/health/ping_liveness_local.sh 5",
+                  ],
+                },
+                "failureThreshold": 5,
+                "initialDelaySeconds": 20,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 5,
+              },
+              "name": "redis",
+              "ports": Array [
+                Object {
+                  "containerPort": 6379,
+                  "name": "redis",
+                },
+              ],
+              "readinessProbe": Object {
+                "exec": Object {
+                  "command": Array [
+                    "sh",
+                    "-c",
+                    "/health/ping_readiness_local.sh 5",
+                  ],
+                },
+                "failureThreshold": 5,
+                "initialDelaySeconds": 20,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 1,
+              },
+              "resources": Object {
+                "limits": Object {},
+                "requests": Object {},
+              },
+              "securityContext": Object {
+                "runAsUser": 1001,
+              },
+              "volumeMounts": Array [
+                Object {
+                  "mountPath": "/opt/bitnami/scripts/start-scripts",
+                  "name": "start-scripts",
+                },
+                Object {
+                  "mountPath": "/health",
+                  "name": "health",
+                },
+                Object {
+                  "mountPath": "/data",
+                  "name": "redis-data",
+                },
+                Object {
+                  "mountPath": "/opt/bitnami/redis/mounted-etc",
+                  "name": "config",
+                },
+                Object {
+                  "mountPath": "/opt/bitnami/redis/etc",
+                  "name": "redis-tmp-conf",
+                },
+                Object {
+                  "mountPath": "/tmp",
+                  "name": "tmp",
+                },
+              ],
+            },
+            Object {
+              "args": Array [
+                "-c",
+                "/opt/bitnami/scripts/start-scripts/start-sentinel.sh",
+              ],
+              "command": Array [
+                "/bin/bash",
+              ],
+              "env": Array [
+                Object {
+                  "name": "BITNAMI_DEBUG",
+                  "value": "false",
+                },
+                Object {
+                  "name": "REDIS_PASSWORD",
+                  "valueFrom": Object {
+                    "secretKeyRef": Object {
+                      "key": "redis-password",
+                      "name": "tt-dev-redis",
+                    },
+                  },
+                },
+                Object {
+                  "name": "REDIS_SENTINEL_TLS_ENABLED",
+                  "value": "no",
+                },
+                Object {
+                  "name": "REDIS_SENTINEL_PORT",
+                  "value": "26379",
+                },
+              ],
+              "image": "test-image",
+              "imagePullPolicy": "IfNotPresent",
+              "lifecycle": Object {
+                "preStop": Object {
+                  "exec": Object {
+                    "command": Array [
+                      "/bin/bash",
+                      "-c",
+                      "/opt/bitnami/scripts/start-scripts/prestop-sentinel.sh",
+                    ],
+                  },
+                },
+              },
+              "livenessProbe": Object {
+                "exec": Object {
+                  "command": Array [
+                    "sh",
+                    "-c",
+                    "/health/ping_sentinel.sh 5",
+                  ],
+                },
+                "failureThreshold": 5,
+                "initialDelaySeconds": 20,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 5,
+              },
+              "name": "sentinel",
+              "ports": Array [
+                Object {
+                  "containerPort": 26379,
+                  "name": "redis-sentinel",
+                },
+              ],
+              "readinessProbe": Object {
+                "exec": Object {
+                  "command": Array [
+                    "sh",
+                    "-c",
+                    "/health/ping_sentinel.sh 5",
+                  ],
+                },
+                "failureThreshold": 5,
+                "initialDelaySeconds": 20,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 1,
+              },
+              "resources": Object {
+                "limits": Object {},
+                "requests": Object {},
+              },
+              "securityContext": Object {
+                "runAsUser": 1001,
+              },
+              "volumeMounts": Array [
+                Object {
+                  "mountPath": "/opt/bitnami/scripts/start-scripts",
+                  "name": "start-scripts",
+                },
+                Object {
+                  "mountPath": "/health",
+                  "name": "health",
+                },
+                Object {
+                  "mountPath": "/data",
+                  "name": "redis-data",
+                },
+                Object {
+                  "mountPath": "/opt/bitnami/redis-sentinel/mounted-etc",
+                  "name": "config",
+                },
+                Object {
+                  "mountPath": "/opt/bitnami/redis-sentinel/etc",
+                  "name": "sentinel-tmp-conf",
+                },
+              ],
+            },
+          ],
+          "nodeSelector": Object {
+            "test": "test",
+          },
+          "securityContext": Object {
+            "fsGroup": 1001,
+          },
+          "serviceAccountName": "tt-dev-redis",
+          "terminationGracePeriodSeconds": 30,
+          "tolerations": Array [
+            Object {
+              "key": "test",
+              "operator": "Equal",
+              "value": "test",
+            },
+          ],
+          "volumes": Array [
+            Object {
+              "configMap": Object {
+                "defaultMode": 755,
+                "name": "tt-dev-redis-scripts",
+              },
+              "name": "start-scripts",
+            },
+            Object {
+              "configMap": Object {
+                "defaultMode": 755,
+                "name": "tt-dev-redis-health",
+              },
+              "name": "health",
+            },
+            Object {
+              "configMap": Object {
+                "name": "tt-dev-redis-configuration",
+              },
+              "name": "config",
+            },
+            Object {
+              "emptyDir": Object {},
+              "name": "sentinel-tmp-conf",
+            },
+            Object {
+              "emptyDir": Object {},
+              "name": "redis-tmp-conf",
+            },
+            Object {
+              "emptyDir": Object {},
+              "name": "tmp",
+            },
+          ],
+        },
+      },
+      "updateStrategy": Object {
+        "rollingUpdate": Object {},
+        "type": "RollingUpdate",
+      },
+      "volumeClaimTemplates": Array [
+        Object {
+          "metadata": Object {
+            "labels": Object {
+              "component": "node",
+              "instance": "tt-dev-redis",
+              "name": "tt-dev-redis",
+            },
+            "name": "tt-dev-redis-data",
+          },
+          "spec": Object {
+            "accessModes": Array [
+              "ReadWriteOnce",
+            ],
+            "resources": Object {
+              "requests": Object {
+                "storage": "10Gi",
+              },
+            },
+            "storageClassName": "test-tt-dev-redis-storageclass-c8dabe26",
+          },
+        },
+      ],
+    },
+  },
+]
+`;

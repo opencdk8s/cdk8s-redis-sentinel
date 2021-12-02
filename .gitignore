@@ -30,6 +30,7 @@ jspm_packages/
 *.tgz
 .yarn-integrity
 .cache
+*tags
 !/.projenrc.js
 /test-reports/
 junit.xml
@@ -37,7 +38,7 @@ junit.xml
 !/.github/workflows/build.yml
 /dist/changelog.md
 /dist/version.txt
-!/.mergify.yml
+!/.github/workflows/release.yml
 !/.github/pull_request_template.md
 !/test/
 !/tsconfig.dev.json
@@ -48,5 +49,4 @@ junit.xml
 .jsii
 tsconfig.json
 !/API.md
-!/.github/workflows/release.yml
 !/.github/workflows/upgrade-main.yml

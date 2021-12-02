@@ -153,6 +153,22 @@
         }
       ]
     },
+    "publish:golang": {
+      "name": "publish:golang",
+      "description": "Publish this package to GitHub",
+      "env": {
+        "GIT_USER_NAME": "github-actions",
+        "GIT_USER_EMAIL": "github-actions@github.com"
+      },
+      "requiredEnv": [
+        "GITHUB_TOKEN"
+      ],
+      "steps": [
+        {
+          "exec": "npx -p jsii-release@latest jsii-release-golang"
+        }
+      ]
+    },
     "publish:npm": {
       "name": "publish:npm",
       "description": "Publish this package to npm",
@@ -264,7 +280,7 @@
           "exec": "yarn install --check-files"
         },
         {
-          "exec": "yarn upgrade @types/jest @types/node @typescript-eslint/eslint-plugin @typescript-eslint/parser cdk8s-plus-17 cdk8s constructs eslint eslint-import-resolver-node eslint-import-resolver-typescript eslint-plugin-import jest jest-junit jsii jsii-diff jsii-docgen jsii-pacmak json-schema npm-check-updates standard-version ts-jest typescript cdk8s-plus-17 cdk8s constructs"
+          "exec": "yarn upgrade @types/jest @types/node @typescript-eslint/eslint-plugin @typescript-eslint/parser cdk8s constructs eslint-import-resolver-node eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit jsii jsii-diff jsii-docgen jsii-pacmak json-schema npm-check-updates standard-version ts-jest typescript cdk8s constructs"
         },
         {
           "exec": "npx projen"
