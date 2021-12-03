@@ -19,7 +19,7 @@ const project = new ConstructLibraryCdk8s({
   ],
 
   publishToGo: {
-    moduleName: 'github.com/opencdk8s/cdk8s-redis-sentinel-go/cdk8sredissentinel',
+    moduleName: 'github.com/opencdk8s/cdk8s-redis-sentinel-go',
   },
 
   // deps: [],                /* Runtime dependencies of this module. */
