@@ -632,6 +632,7 @@ exec redis-server /opt/bitnami/redis-sentinel/etc/sentinel.conf --sentinel",
       "namespace": "test",
     },
     "spec": Object {
+      "replicas": 3,
       "selector": Object {
         "matchLabels": Object {
           "component": "node",

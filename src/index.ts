@@ -694,7 +694,7 @@ fi`,
         },
       },
       spec: {
-        replicas: opts.replicas,
+        replicas: opts.replicas ? opts.replicas : 3,
         selector: {
           matchLabels: {
             name: name,
