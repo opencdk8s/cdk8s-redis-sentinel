@@ -31784,6 +31784,19 @@ The size of volume to use.
 
 ---
 
+##### `namespace`<sup>Optional</sup> <a name="cdk8s-redis-sentinel.RedisOptions.property.namespace"></a>
+
+```typescript
+public readonly namespace: string;
+```
+
+- *Type:* `string`
+- *Default:* default
+
+The namespace to deploy the sts to.
+
+---
+
 ##### `nodeSelector`<sup>Optional</sup> <a name="cdk8s-redis-sentinel.RedisOptions.property.nodeSelector"></a>
 
 ```typescript

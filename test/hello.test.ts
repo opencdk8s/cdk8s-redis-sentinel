@@ -32,6 +32,7 @@ test('with values', () => {
     nodeSelector: {
       test: 'test',
     },
+    namespace: "test",
     tolerations: [
       {
         key: 'test',

@@ -47,11 +47,18 @@ export interface RedisOptions {
    * @default undefined
    */
   readonly tolerations?: k8s.Toleration[];
+  /**
+   * The namespace to deploy the sts to
+   * @default default
+   */
+  readonly namespace?: string;
 }
 
 export class Redis extends Construct {
   constructor(scope: Construct, name: string, opts: RedisOptions) {
     super(scope, name);
+
+    const ns = opts?.namespace ? opts.namespace : 'default';
 
     const storageClass = new k8s.KubeStorageClass(this, 'storageClass', {
       provisioner: 'kubernetes.io/aws-ebs',
@@ -127,7 +134,7 @@ export class Redis extends Construct {
         'sentinel.conf': `-
     dir "/tmp"
     port 26379
-    sentinel monitor mymaster redis-node-0.redis-headless.default.svc.cluster.local 6379 2
+    sentinel monitor mymaster redis-node-0.redis-headless.${ns}.svc.cluster.local 6379 2
     sentinel down-after-milliseconds mymaster 60000
     sentinel failover-timeout mymaster 18000
     sentinel parallel-syncs mymaster 1
@@ -160,7 +167,7 @@ if [ "$response" != "PONG" ]; then
   echo "$response"
   exit 1
 fi`,
-        'ping_livesness_local.sh': `#!/bin/bash
+        'ping_liveness_local.sh': `#!/bin/bash
 
 [[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD="$(< "\${REDIS_PASSWORD_FILE}")"
 [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
@@ -297,8 +304,8 @@ if [[ "$myip" = *" "* ]]; then
     myip=$(echo $myip | awk '{if ( match($0,/([0-9]+\.)([0-9]+\.)([0-9]+\.)[0-9]+/) ) { print substr($0,RSTART,RLENGTH); } }')
 fi
 
-HEADLESS_SERVICE="redis-headless.default.svc.cluster.local"
-REDIS_SERVICE="redis.default.svc.cluster.local"
+HEADLESS_SERVICE="redis-headless.${ns}.svc.cluster.local"
+REDIS_SERVICE="redis.${ns}.svc.cluster.local"
 SENTINEL_SERVICE_PORT=$(get_port "redis" "TCP_SENTINEL")
 
 not_exists_dns_entry() {
@@ -401,8 +408,8 @@ exec redis-server "\${ARGS[@]}"`,
 . /opt/bitnami/scripts/libvalidations.sh
 . /opt/bitnami/scripts/libfile.sh
 
-HEADLESS_SERVICE="redis-headless.default.svc.cluster.local"
-REDIS_SERVICE="redis.default.svc.cluster.local"
+HEADLESS_SERVICE="redis-headless.${ns}.svc.cluster.local"
+REDIS_SERVICE="redis.${ns}.svc.cluster.local"
 
 get_port() {
     hostname="$1"
@@ -543,7 +550,7 @@ exec redis-server /opt/bitnami/redis-sentinel/etc/sentinel.conf --sentinel`,
 . /opt/bitnami/scripts/libvalidations.sh
 . /opt/bitnami/scripts/libos.sh
 
-HEADLESS_SERVICE="redis-headless.default.svc.cluster.local"
+HEADLESS_SERVICE="redis-headless.${ns}.svc.cluster.local"
 SENTINEL_SERVICE_ENV_NAME=REDIS_SERVICE_PORT_TCP_SENTINEL
 SENTINEL_SERVICE_PORT=$\{!SENTINEL_SERVICE_ENV_NAME}
 
@@ -564,7 +571,7 @@ failover_finished() {
   [[ "$REDIS_MASTER_HOST" != "$(get_full_hostname $HOSTNAME)" ]]
 }
 
-REDIS_SERVICE="redis.default.svc.cluster.local"
+REDIS_SERVICE="redis.${ns}.svc.cluster.local"
 
 # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
 [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"

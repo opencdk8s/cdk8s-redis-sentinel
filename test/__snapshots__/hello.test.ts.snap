@@ -115,6 +115,17 @@ exit_status=0
 \\"$script_dir/ping_liveness_local.sh\\" $1 || exit_status=$?
 \\"$script_dir/ping_liveness_master.sh\\" $1 || exit_status=$?
 exit $exit_status",
+      "ping_liveness_local.sh": "#!/bin/bash
+
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_PORT     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ] && [ \\"$response\\" != \\"LOADING Redis is loading the dataset in memory\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
       "ping_liveness_master.sh": "    #!/bin/bash
 
     [[ -f $REDIS_MASTER_PASSWORD_FILE ]] && export REDIS_MASTER_PASSWORD=\\"$(< \\"\${REDIS_MASTER_PASSWORD_FILE}\\")\\"
@@ -126,17 +137,6 @@ exit $exit_status",
       echo \\"$response\\"
       exit 1
     fi",
-      "ping_livesness_local.sh": "#!/bin/bash
-
-[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
-[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
-response=$(
-  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_PORT     ping
-)
-if [ \\"$response\\" != \\"PONG\\" ] && [ \\"$response\\" != \\"LOADING Redis is loading the dataset in memory\\" ]; then
-  echo \\"$response\\"
-  exit 1
-fi",
       "ping_readiness_local.sh": "#!/bin/bash
 [[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
 [[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
@@ -1061,7 +1061,7 @@ Array [
       "sentinel.conf": "-
     dir \\"/tmp\\"
     port 26379
-    sentinel monitor mymaster redis-node-0.redis-headless.default.svc.cluster.local 6379 2
+    sentinel monitor mymaster redis-node-0.redis-headless.test.svc.cluster.local 6379 2
     sentinel down-after-milliseconds mymaster 60000
     sentinel failover-timeout mymaster 18000
     sentinel parallel-syncs mymaster 1
@@ -1102,6 +1102,17 @@ exit_status=0
 \\"$script_dir/ping_liveness_local.sh\\" $1 || exit_status=$?
 \\"$script_dir/ping_liveness_master.sh\\" $1 || exit_status=$?
 exit $exit_status",
+      "ping_liveness_local.sh": "#!/bin/bash
+
+[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
+[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
+response=$(
+  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_PORT     ping
+)
+if [ \\"$response\\" != \\"PONG\\" ] && [ \\"$response\\" != \\"LOADING Redis is loading the dataset in memory\\" ]; then
+  echo \\"$response\\"
+  exit 1
+fi",
       "ping_liveness_master.sh": "    #!/bin/bash
 
     [[ -f $REDIS_MASTER_PASSWORD_FILE ]] && export REDIS_MASTER_PASSWORD=\\"$(< \\"\${REDIS_MASTER_PASSWORD_FILE}\\")\\"
@@ -1113,17 +1124,6 @@ exit $exit_status",
       echo \\"$response\\"
       exit 1
     fi",
-      "ping_livesness_local.sh": "#!/bin/bash
-
-[[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
-[[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
-response=$(
-  timeout -s 3 $1   redis-cli     -h localhost     -p $REDIS_PORT     ping
-)
-if [ \\"$response\\" != \\"PONG\\" ] && [ \\"$response\\" != \\"LOADING Redis is loading the dataset in memory\\" ]; then
-  echo \\"$response\\"
-  exit 1
-fi",
       "ping_readiness_local.sh": "#!/bin/bash
 [[ -f $REDIS_PASSWORD_FILE ]] && export REDIS_PASSWORD=\\"$(< \\"\${REDIS_PASSWORD_FILE}\\")\\"
 [[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
@@ -1206,7 +1206,7 @@ fi",
 . /opt/bitnami/scripts/libvalidations.sh
 . /opt/bitnami/scripts/libos.sh
 
-HEADLESS_SERVICE=\\"redis-headless.default.svc.cluster.local\\"
+HEADLESS_SERVICE=\\"redis-headless.test.svc.cluster.local\\"
 SENTINEL_SERVICE_ENV_NAME=REDIS_SERVICE_PORT_TCP_SENTINEL
 SENTINEL_SERVICE_PORT=\${!SENTINEL_SERVICE_ENV_NAME}
 
@@ -1227,7 +1227,7 @@ failover_finished() {
   [[ \\"$REDIS_MASTER_HOST\\" != \\"$(get_full_hostname $HOSTNAME)\\" ]]
 }
 
-REDIS_SERVICE=\\"redis.default.svc.cluster.local\\"
+REDIS_SERVICE=\\"redis.test.svc.cluster.local\\"
 
 # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
 [[ -n \\"$REDIS_PASSWORD\\" ]] && export REDISCLI_AUTH=\\"$REDIS_PASSWORD\\"
@@ -1288,8 +1288,8 @@ if [[ \\"$myip\\" = *\\" \\"* ]]; then
     myip=$(echo $myip | awk '{if ( match($0,/([0-9]+.)([0-9]+.)([0-9]+.)[0-9]+/) ) { print substr($0,RSTART,RLENGTH); } }')
 fi
 
-HEADLESS_SERVICE=\\"redis-headless.default.svc.cluster.local\\"
-REDIS_SERVICE=\\"redis.default.svc.cluster.local\\"
+HEADLESS_SERVICE=\\"redis-headless.test.svc.cluster.local\\"
+REDIS_SERVICE=\\"redis.test.svc.cluster.local\\"
 SENTINEL_SERVICE_PORT=$(get_port \\"redis\\" \\"TCP_SENTINEL\\")
 
 not_exists_dns_entry() {
@@ -1392,8 +1392,8 @@ exec redis-server \\"\${ARGS[@]}\\"",
 . /opt/bitnami/scripts/libvalidations.sh
 . /opt/bitnami/scripts/libfile.sh
 
-HEADLESS_SERVICE=\\"redis-headless.default.svc.cluster.local\\"
-REDIS_SERVICE=\\"redis.default.svc.cluster.local\\"
+HEADLESS_SERVICE=\\"redis-headless.test.svc.cluster.local\\"
+REDIS_SERVICE=\\"redis.test.svc.cluster.local\\"
 
 get_port() {
     hostname=\\"$1\\"
