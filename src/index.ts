@@ -435,7 +435,7 @@ get_full_hostname() {
 
 SERVPORT=$(get_port "$HOSTNAME" "SENTINEL")
 REDISPORT=$(get_port "$HOSTNAME" "REDIS")
-SENTINEL_SERVICE_PORT=$(get_port "redis" "TCP_SENTINEL")
+SENTINEL_SERVICE_PORT=$(get_port ${name} "TCP_SENTINEL")
     
 myip=$(hostname -i)
 
