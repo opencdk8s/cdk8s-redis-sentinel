@@ -108,31 +108,27 @@ export class Redis extends Construct {
         },
       },
       data: {
-        'redis.conf': `-
-    # User-supplied common configuration:
+        'redis.conf': `# User-supplied common configuration:
     # Enable AOF https://redis.io/topics/persistence#append-only-file
     appendonly yes
     # Disable RDB persistence, AOF persistence already enabled.
     save ""
     # End of common configuration
 `,
-        'master.conf': `-
-    dir /data
+        'master.conf': `dir /data
     # User-supplied master configuration:
     rename-command FLUSHDB ""
     rename-command FLUSHALL ""
     # End of master configuration
 `,
-        'replica.conf': `-
-    dir /data
+        'replica.conf': `dir /data
     slave-read-only yes
     # User-supplied replica configuration:
     rename-command FLUSHDB ""
     rename-command FLUSHALL ""
     # End of replica configuration
 `,
-        'sentinel.conf': `-
-    dir "/tmp"
+        'sentinel.conf': `dir "/tmp"
     port 26379
     sentinel monitor mymaster redis-node-0.redis-headless.${ns}.svc.cluster.local 6379 2
     sentinel down-after-milliseconds mymaster 60000
