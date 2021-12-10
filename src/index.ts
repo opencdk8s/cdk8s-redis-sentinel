@@ -130,7 +130,7 @@ export class Redis extends Construct {
 `,
         'sentinel.conf': `dir "/tmp"
     port 26379
-    sentinel monitor mymaster redis-node-0.${name}-headless.${ns}.svc.cluster.local 6379 2
+    sentinel monitor mymaster ${name}-node-0.${name}-headless.${ns}.svc.cluster.local 6379 2
     sentinel down-after-milliseconds mymaster 60000
     sentinel failover-timeout mymaster 18000
     sentinel parallel-syncs mymaster 1
@@ -529,7 +529,7 @@ add_known_replica() {
 
 # Add available hosts on the network as known replicas & sentinels
 for node in $(seq 0 $((3-1))); do
-    hostname="redis-node-$node"
+    hostname="${name}-node-$node"
     ip="$(getent hosts "$hostname.$HEADLESS_SERVICE" | awk '{ print $1 }')"
     add_known_sentinel "$hostname" "$ip"
     add_known_replica "$hostname" "$ip"
