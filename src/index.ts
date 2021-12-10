@@ -982,14 +982,14 @@ fi`,
                 name: 'start-scripts',
                 configMap: {
                   name: scriptsCm.metadata.name,
-                  defaultMode: 755,
+                  defaultMode: 0o755,
                 },
               },
               {
                 name: 'health',
                 configMap: {
                   name: healthCm.metadata.name,
-                  defaultMode: 755,
+                  defaultMode: 0o755,
                 },
               },
               {
@@ -1015,7 +1015,7 @@ fi`,
         },
         volumeClaimTemplates: [{
           metadata: {
-            name: `${name}-data`,
+            name: 'redis-data',
             labels: {
               name: name,
               instance: name,

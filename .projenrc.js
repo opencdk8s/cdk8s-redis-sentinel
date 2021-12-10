@@ -15,7 +15,7 @@ const project = new ConstructLibraryCdk8s({
   },
 
   gitignore: [
-    '*tags',
+    '*tags*',
   ],
 
   publishToGo: {

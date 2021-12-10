@@ -7,7 +7,7 @@ test('with cm', () => {
     namespace: 'test',
   });
 
-  new Redis(chart, 'tt-dev-redis', {
+  new Redis(chart, 'asd-redis', {
     volumeSize: '10Gi',
     redisPassword: 'test',
   });
@@ -21,7 +21,7 @@ test('with values', () => {
     namespace: 'test',
   });
 
-  new Redis(chart, 'tt-dev-redis', {
+  new Redis(chart, 'asdasd-redis', {
     volumeSize: '10Gi',
     replicas: 2,
     volumeFsType: 'ext3',
