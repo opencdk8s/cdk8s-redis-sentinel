@@ -299,7 +299,7 @@ fi
 
 HEADLESS_SERVICE=\\"asd-redis-headless.default.svc.cluster.local\\"
 REDIS_SERVICE=\\"asd-redis.default.svc.cluster.local\\"
-SENTINEL_SERVICE_PORT=$(get_port \\"redis\\" \\"TCP_SENTINEL\\")
+SENTINEL_SERVICE_PORT=$(get_port \\"asd-redis\\" \\"TCP_SENTINEL\\")
 
 not_exists_dns_entry() {
     if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep \\"^\${myip}\\" )\\" ]]; then
@@ -1282,7 +1282,7 @@ fi
 
 HEADLESS_SERVICE=\\"asdasd-redis-headless.test.svc.cluster.local\\"
 REDIS_SERVICE=\\"asdasd-redis.test.svc.cluster.local\\"
-SENTINEL_SERVICE_PORT=$(get_port \\"redis\\" \\"TCP_SENTINEL\\")
+SENTINEL_SERVICE_PORT=$(get_port \\"asdasd-redis\\" \\"TCP_SENTINEL\\")
 
 not_exists_dns_entry() {
     if [[ -z \\"$(getent ahosts \\"$HEADLESS_SERVICE\\" | grep \\"^\${myip}\\" )\\" ]]; then

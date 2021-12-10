@@ -302,7 +302,7 @@ fi
 
 HEADLESS_SERVICE="${name}-headless.${ns}.svc.cluster.local"
 REDIS_SERVICE="${name}.${ns}.svc.cluster.local"
-SENTINEL_SERVICE_PORT=$(get_port "redis" "TCP_SENTINEL")
+SENTINEL_SERVICE_PORT=$(get_port "${name}" "TCP_SENTINEL")
 
 not_exists_dns_entry() {
     if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^\${myip}" )" ]]; then
