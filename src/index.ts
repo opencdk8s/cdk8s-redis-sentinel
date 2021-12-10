@@ -130,7 +130,7 @@ export class Redis extends Construct {
 `,
         'sentinel.conf': `dir "/tmp"
     port 26379
-    sentinel monitor mymaster redis-node-0.redis-headless.${ns}.svc.cluster.local 6379 2
+    sentinel monitor mymaster redis-node-0.${name}-headless.${ns}.svc.cluster.local 6379 2
     sentinel down-after-milliseconds mymaster 60000
     sentinel failover-timeout mymaster 18000
     sentinel parallel-syncs mymaster 1
@@ -300,8 +300,8 @@ if [[ "$myip" = *" "* ]]; then
     myip=$(echo $myip | awk '{if ( match($0,/([0-9]+\.)([0-9]+\.)([0-9]+\.)[0-9]+/) ) { print substr($0,RSTART,RLENGTH); } }')
 fi
 
-HEADLESS_SERVICE="redis-headless.${ns}.svc.cluster.local"
-REDIS_SERVICE="redis.${ns}.svc.cluster.local"
+HEADLESS_SERVICE="${name}-headless.${ns}.svc.cluster.local"
+REDIS_SERVICE="${name}.${ns}.svc.cluster.local"
 SENTINEL_SERVICE_PORT=$(get_port "redis" "TCP_SENTINEL")
 
 not_exists_dns_entry() {
@@ -404,8 +404,8 @@ exec redis-server "\${ARGS[@]}"`,
 . /opt/bitnami/scripts/libvalidations.sh
 . /opt/bitnami/scripts/libfile.sh
 
-HEADLESS_SERVICE="redis-headless.${ns}.svc.cluster.local"
-REDIS_SERVICE="redis.${ns}.svc.cluster.local"
+HEADLESS_SERVICE="${name}-headless.${ns}.svc.cluster.local"
+REDIS_SERVICE="${name}.${ns}.svc.cluster.local"
 
 get_port() {
     hostname="$1"
@@ -546,7 +546,7 @@ exec redis-server /opt/bitnami/redis-sentinel/etc/sentinel.conf --sentinel`,
 . /opt/bitnami/scripts/libvalidations.sh
 . /opt/bitnami/scripts/libos.sh
 
-HEADLESS_SERVICE="redis-headless.${ns}.svc.cluster.local"
+HEADLESS_SERVICE="${name}-headless.${ns}.svc.cluster.local"
 SENTINEL_SERVICE_ENV_NAME=REDIS_SERVICE_PORT_TCP_SENTINEL
 SENTINEL_SERVICE_PORT=$\{!SENTINEL_SERVICE_ENV_NAME}
 
@@ -567,7 +567,7 @@ failover_finished() {
   [[ "$REDIS_MASTER_HOST" != "$(get_full_hostname $HOSTNAME)" ]]
 }
 
-REDIS_SERVICE="redis.${ns}.svc.cluster.local"
+REDIS_SERVICE="${name}.${ns}.svc.cluster.local"
 
 # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
 [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
